@@ -8,6 +8,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = 'kenzabaccar/student-management'
+        SONARQUBE = 'SonarQubeServer' // Nom défini dans Jenkins
     }
 
     stages {
@@ -44,6 +45,18 @@ pipeline {
                 }
             }
         }
+
+        stage('SonarQube Analysis') {
+            environment {
+                SONAR_TOKEN = credentials('sonarqube-token')
+            }
+            steps {
+                withSonarQubeEnv('SonarQubeServer') {
+                    sh "mvn sonar:sonar -Dsonar.login=${SONAR_TOKEN}"
+                }
+            }
+        }
     }
 }
+
 
