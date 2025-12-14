@@ -32,34 +32,33 @@ pipeline {
             }
         }
 
-        stage('🐳 Docker') {
-            parallel {
-                stage('Build Docker Image') {
-                    steps {
-                        echo "🔨 Construction de l'image Docker..."
-                        sh 'docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .'
-                    }
-                }
+        stage('🐳 Docker Build') {
+            steps {
+                echo "🔨 Construction de l'image Docker..."
+                sh 'docker build -t ${DOCKER_IMAGE}:${BUILD_NUMBER} .'
+            }
+        }
 
-                stage('Push Docker Image') {
-                    steps {
-                        withCredentials([usernamePassword(
-                            credentialsId: 'dockerhub-creds',
-                            usernameVariable: 'DOCKER_USER',
-                            passwordVariable: 'DOCKER_PASS'
-                        )]) {
-                            echo "📤 Push de l'image Docker vers Docker Hub..."
-                            sh '''
-                                echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                                docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                            '''
-                        }
-                    }
+        stage('🐳 Docker Push') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    echo "📤 Push de l'image Docker vers Docker Hub..."
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                    '''
                 }
             }
         }
 
-        stage('🔍 Quality') {
+        stage('🔍 SonarQube Analysis') {
+            environment {
+                SONAR_TOKEN = credentials('sonarqube-token')
+            }
             steps {
                 echo "📊 Analyse SonarQube..."
                 withSonarQubeEnv('sonarqube') {
@@ -87,7 +86,7 @@ pipeline {
             }
         }
 
-        stage('📄 Reports & Stage View') {
+        stage('📄 Reports') {
             steps {
                 echo "📊 Publication des rapports..."
                 publishHTML(target: [
