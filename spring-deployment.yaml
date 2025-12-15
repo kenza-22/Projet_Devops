@@ -19,7 +19,7 @@ spec:
           command: ['sh', '-c', 'until nc -z mysql-service 3306; do echo waiting for mysql; sleep 3; done']
       containers:
         - name: stationskicontainer
-          image: leila1312/stationski:latest
+          image: kenzabaccar/student-management:latest
           ports:
             - containerPort: 8089
           env:
