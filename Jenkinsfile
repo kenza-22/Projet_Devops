@@ -9,6 +9,8 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'kenzabaccar/student-management'
         KUBECONFIG = '/home/vagrant/.kube/config'
+        GRAFANA_URL = 'http://192.168.50.4:3000'
+
     }
 
     stages {
@@ -83,6 +85,22 @@ pipeline {
                     echo "📊 Services disponibles :"
                     kubectl get services -n devops
                 """
+            }
+        }
+ stage('Grafana Dashboards Update') {
+            environment { GRAFANA_API_KEY = credentials('grafana-api-key') }
+            steps {
+                sh '''
+                    if [ -d "grafana/dashboards" ]; then
+                        for file in grafana/dashboards/*.json; do
+                            payload="{\\"dashboard\\": $(cat $file), \\"overwrite\\": true}"
+                            curl -X POST "${GRAFANA_URL}/api/dashboards/db" \
+                                 -H "Authorization: Bearer ${GRAFANA_API_KEY}" \
+                                 -H "Content-Type: application/json" \
+                                 -d "$payload"
+                        done
+                    fi
+                '''
             }
         }
 
